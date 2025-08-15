@@ -19,10 +19,18 @@ function App() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const { data, isLoading, isError, isSuccess, refetch } = useQuery({
     queryKey: ["notes", searchQuery, currentPage],
-    queryFn: () => fetchNotes({ search: searchQuery, page: currentPage }),
+    queryFn: () => fetchNotes({ search: debouncedSearch, page: currentPage }),
     // enabled: searchQuery !== "",
     placeholderData: keepPreviousData,
   });
@@ -78,4 +86,3 @@ function App() {
 }
 
 export default App
-

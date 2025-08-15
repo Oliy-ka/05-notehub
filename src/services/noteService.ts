@@ -2,7 +2,7 @@ import axios from "axios";
 import type { Note, NoteId, NoteTag } from "../types/note"
 
 axios.defaults.baseURL = 'https://notehub-public.goit.study/api';
-axios.defaults.headers.common['Authorization'] = `Bearer ${import.meta.env.VITE_API_KEY}`;
+axios.defaults.headers.common['Authorization'] = `Bearer ${import.meta.env.VITE_NOTEHUB_TOKEN}`;
 
 
 export interface FetchNotesParams {
@@ -28,10 +28,9 @@ export const fetchNotes = async ({ search, page, perPage = 12 }: FetchNotesParam
 }
 
 interface createNoteParams {
-  id: NoteId;
-  title?: string;
+  title: string;
   content?: string;
-  tag?: NoteTag;
+  tag: NoteTag;
 }
 
 export const createNote = async (noteData: createNoteParams) => {

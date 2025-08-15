@@ -1,22 +1,44 @@
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import css from "./NoteForm.module.css";
 import * as Yup from "yup";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createNote } from "../../services/noteService";
+import type { NoteTag } from "../../types/note";
 
 interface NoteFormProps{
     onSuccess: () => void;
     onCancel?: () => void;
 }
+interface FormValues {
+  title: string;
+  content: string;
+  tag: "" | NoteTag;
+}
 
 export default function NoteForm({ onSuccess, onCancel }: NoteFormProps) {
     const NoteFormSchema = Yup.object().shape({
         title: Yup.string().required("This field is required").min(3, "Title  must be at least 3 characters").max(50, "Title is too long"),
-        content: Yup.string().required("This field is required").max(500, "Content is too long"),
+        content: Yup.string().max(500, "Content is too long"),
         tag: Yup.string().required("Please select a tag").oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"], "Invalid tag selected"),
     });
 
+    const queryClient = useQueryClient();
+
+    const { mutate, isPending } = useMutation({
+    mutationFn: (values: FormValues) => createNote({
+      title: values.title,
+      content: values.content,
+      tag: values.tag as NoteTag
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      onSuccess();
+    },
+  });
+
     return (
-        <Formik initialValues={{ title: "", content: "", tag: "" }} onSubmit={onSuccess} validationSchema={NoteFormSchema}>
-            {({ isSubmitting }) => (
+        <Formik initialValues={{ title: "", content: "", tag: "" }} onSubmit={(values: FormValues) => mutate(values)} validationSchema={NoteFormSchema}>
+            {
                 <Form className={css.form}>
                 <div className={css.formGroup}>
                     <label htmlFor="title">Title</label>
@@ -37,7 +59,8 @@ export default function NoteForm({ onSuccess, onCancel }: NoteFormProps) {
 
                 <div className={css.formGroup}>
                     <label htmlFor="tag">Tag</label>
-                    <Field  as="select" id="tag" name="tag" className={css.select}>
+                    <Field as="select" id="tag" name="tag" className={css.select}>
+                    <option value="">Select a tag</option>
                     <option value="Todo">Todo</option>
                     <option value="Work">Work</option>
                     <option value="Personal">Personal</option>
@@ -54,13 +77,13 @@ export default function NoteForm({ onSuccess, onCancel }: NoteFormProps) {
                     <button
                     type="submit"
                     className={css.submitButton}
-                    disabled={isSubmitting}
+                    disabled={isPending}
                     >
-                    {isSubmitting ? "Creating..." : "Create note"}
+                    {isPending ? "Creating..." : "Create note"}
                     </button>
                 </div>
             </Form>
-            )}
+            }
         </Formik>
     );
 }
