@@ -9,6 +9,7 @@ import NoteForm from "../NoteForm/NoteForm";
 import SearchBox from "../SearchBox/SearchBox";
 import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
+import { useDebouncedCallback } from "use-debounce";
 
 
 function App() {
@@ -19,19 +20,12 @@ function App() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-    const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+  const debouncedSetSearchQuery = useDebouncedCallback(setSearchQuery, 500);
 
   const { data, isLoading, isError, isSuccess, refetch } = useQuery({
     queryKey: ["notes", searchQuery, currentPage],
-    queryFn: () => fetchNotes({ search: debouncedSearch, page: currentPage }),
-    // enabled: searchQuery !== "",
+    queryFn: () => fetchNotes({ search: searchQuery, page: currentPage }),
     placeholderData: keepPreviousData,
   });
 
@@ -54,11 +48,10 @@ function App() {
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox onSearch={setSearchQuery} />
+        <SearchBox onSearch={debouncedSetSearchQuery} />
         {totalPages > 1 && <Pagination pages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />}
         <button className={css.button} onClick={openModal}>Create note +</button>
       </header>
-      {/* {isSuccess && notes.length > 0 && <NoteList notes={notes} />} */}
       {isSuccess && (
         <>
           {notes.length > 0 ? (
